@@ -1,0 +1,2 @@
+{:main gateworld.client.core
+ :preloads [devtools.preload]}
