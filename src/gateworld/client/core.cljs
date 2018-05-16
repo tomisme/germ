@@ -1,6 +1,6 @@
 (ns gateworld.client.core
   (:require
-   [gateworld.rules.core]
+   [gateworld.rules.core :as rules]
    [reagent.core :as reagent]
    [re-frame.core :as rf]))
 
@@ -24,24 +24,14 @@
 (def initial-db
   {:view :combat
    :story ["a" "b" "c"]
-   :world {:cards [(-> rock-card
-                       (assoc :owner-pid 0)
-                       (assoc :pos :hand))
-                   (-> rock-card
-                       (assoc :owner-pid 0)
-                       (assoc :pos :field))
-                   (-> blob-card
-                       (assoc :owner-pid 0)
-                       (assoc :pos :field))
-                   (-> blob-card
-                       (assoc :owner-pid 0)
-                       (assoc :pos :field))
-                   (-> blob-card
-                       (assoc :owner-pid 1)
-                       (assoc :pos :field))
-                   (-> blob-card
-                       (assoc :owner-pid 1)
-                       (assoc :pos :hand))]}})
+   :combat-state (-> rules/empty-combat-state
+                     (rules/add-char rules/empty-char)
+                     (rules/add-char rules/empty-char)
+                     (rules/give-char-permanent 0 rock-card)
+                     (rules/give-char-permanent 0 blob-card)
+                     (rules/give-char-permanent 0 blob-card)
+                     (rules/give-char-permanent 1 blob-card)
+                     (rules/give-char-in-hand 0 rock-card))})
 
 
 ;;
@@ -62,21 +52,21 @@
 (rf/reg-sub
   :field-cards
   (fn [db [_ pid]]
-    (->> db
-         :world
-         :cards
-         (filter #(= (:pos %) :field))
-         (filter #(= (:owner-pid %) pid)))))
+    (-> db
+        :combat-state
+        :chars
+        (get pid)
+        :permanents)))
 
 
 (rf/reg-sub
   :hand-cards
   (fn [db [_ pid]]
-    (->> db
-         :world
-         :cards
-         (filter #(= (:pos %) :hand))
-         (filter #(= (:owner-pid %) pid)))))
+    (-> db
+         :combat-state
+         :chars
+         (get pid)
+         :in-hand)))
 
 
 ;;

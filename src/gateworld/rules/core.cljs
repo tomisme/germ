@@ -19,9 +19,9 @@
 ;;
 
 
-(def empty-char-state
+(def empty-char
   {:permanents []
-   :cards-in-hand []})
+   :in-hand []})
 
 
 (def empty-combat-state
@@ -44,6 +44,16 @@
   [state npc]
   (as-> state $
         (update-in $ [:npcs] conj npc)))
+
+
+(defn give-char-permanent
+  [state char-index permanent]
+  (update-in state [:chars char-index :permanents] conj permanent))
+
+
+(defn give-char-in-hand
+  [state char-index thing]
+  (update-in state [:chars char-index :in-hand] conj thing))
 
 
 (defn add-effect
