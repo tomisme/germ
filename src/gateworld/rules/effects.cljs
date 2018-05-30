@@ -28,17 +28,20 @@
 (defcard effect-types effect-types)
 
 
+;;
+
+
 (defn add-effect
   [state effect]
   (update-in state [:fx] conj effect))
 
 
 (defn sacrifice-permanent
-  [state {:keys [char permanent-index]}]
+  [state {:keys [char-idx perm-idx]}]
   (update-in state
-             [:chars char :permanents]
+             [:chars char-idx :permanents]
              vec-without
-             permanent-index))
+             perm-idx))
 
 
 (defn resolve-next-effect
@@ -46,4 +49,4 @@
   (let [effect (-> state :fx peek)
         popped-state (update-in state [:fx] pop)]
     (condp = (:type effect)
-           :sacrifice (sacrifice-permanent popped-state effect))))
+           :sac-perm (sacrifice-permanent popped-state effect))))
