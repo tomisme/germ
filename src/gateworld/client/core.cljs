@@ -1,8 +1,12 @@
 (ns gateworld.client.core
   (:require
    [gateworld.rules.core :as rules]
+   [gateworld.rules.effects :as effects]
    [reagent.core :as reagent]
-   [re-frame.core :as rf]))
+   [re-frame.core :as rf]
+   [re-frame.db])
+  (:require-macros
+   [devcards.core :refer [defcard defcard-rg]]))
 
 
 ;;
@@ -23,15 +27,15 @@
 
 (def initial-db
   {:view :combat
-   :story ["a" "b" "c"]
+   :story ["Combat started between _ and _"]
    :combat-state (-> rules/empty-combat-state
-                     (rules/add-char rules/empty-char)
-                     (rules/add-char rules/empty-char)
-                     (rules/give-char-permanent 0 rock-card)
-                     (rules/give-char-permanent 0 blob-card)
-                     (rules/give-char-permanent 0 blob-card)
-                     (rules/give-char-permanent 1 blob-card)
-                     (rules/give-char-in-hand 0 rock-card))})
+                     (effects/add-char rules/empty-char)
+                     (effects/add-char rules/empty-char)
+                     (effects/give-char-permanent 0 rock-card)
+                     (effects/give-char-permanent 0 blob-card)
+                     (effects/give-char-permanent 0 blob-card)
+                     (effects/give-char-permanent 1 blob-card)
+                     (effects/give-char-in-hand 0 rock-card))})
 
 
 ;;
@@ -82,14 +86,14 @@
      [:div attack "/" toughness])])
 
 
-(defn field-el
+(defn field-component
   [pid]
   (into [:div {:style {:display "flex"
                        :margin 10}}]
         (map field-permanent-el @(rf/subscribe [:field-cards pid]))))
 
 
-(defn hand-el
+(defn hand-component
   []
   [:div]
   (into [:div {:style {:display "flex"
@@ -97,19 +101,19 @@
         (map field-permanent-el @(rf/subscribe [:hand-cards 0]))))
 
 
-(defn env-el
+(defn env-component
   []
   [:div {:style {:padding 10
                  :border "1px solid"}}
-   [field-el 1]
+   [field-component 1]
    [:hr]
-   [field-el 0]
+   [field-component 0]
    [:hr]
    [:hr]
-   [hand-el]])
+   [hand-component]])
 
 
-(defn story-el
+(defn story-component
   []
   (into [:div {:style {:min-width 200
                        :border "1px solid"
@@ -120,27 +124,33 @@
              @(rf/subscribe [:story]))))
 
 
-(defn ui-el
+(defn ui-component
   []
   [:div {:style {:border "1px solid"
                  :padding 10
                  :display "flex"}}
-   [story-el]
-   [env-el]])
+   [story-component]
+   [env-component]])
 
 
 ;;
-;
-;
-; (defn render-ui
-;   []
-;   (reagent/render [ui-el] (js/document.getElementById "app")))
-;
-;
-; (defonce start
-;   (do
-;    (rf/dispatch-sync [:initialise])
-;    (render-ui)))
-;
-;
-; (render-ui)
+
+
+(rf/dispatch-sync [:initialise])
+
+
+;;
+
+
+; (reagent/render [ui-component] (js/document.getElementById "app"))
+
+
+;;
+
+
+(defcard-rg ui-component
+  [ui-component])
+
+
+(defcard app-db
+  @re-frame.db/app-db)

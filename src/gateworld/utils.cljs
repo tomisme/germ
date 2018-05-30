@@ -6,7 +6,7 @@
   (.log js/console x))
 
 
-(defn vec-with-item-removed
+(defn vec-without
   [v i]
   (into (subvec v 0 i)
         (subvec v (inc i))))
