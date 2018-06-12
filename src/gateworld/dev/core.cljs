@@ -1,5 +1,6 @@
 (ns gateworld.dev.core
   (:require
+   [gateworld.dev.wfc]
    [devcards.core]
    [re-frame.core :as rf]
    [gateworld.client.core]
