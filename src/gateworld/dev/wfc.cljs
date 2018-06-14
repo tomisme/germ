@@ -1,4 +1,6 @@
 (ns gateworld.dev.wfc
+  (:require
+   [reagent.core])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg]]))
 
@@ -97,6 +99,32 @@
                         (render-overlap pattern (nth overlap-index idx))])
                      patterns)))
 
+
+(defn render-wave
+  [wave patterns]
+  (let [grid (vec (for [row wave]
+                    (vec (for [cell row]
+                           (let [freq (frequencies cell)
+                                 num-valid (get freq true)]
+                             {:num num-valid
+                              :color (if (not= num-valid 1)
+                                       nil
+                                       (loop [i 0]
+                                         (if (nth cell i)
+                                           (first (first (nth patterns i)))
+                                           (recur (inc i)))))})))))]
+    (into [:div]
+          (for [row grid]
+            (into [:div {:style {:display "flex"}}]
+                  (for [cell row]
+                    [:div {:style {:width 25
+                                   :height 25
+                                   :border "1px solid grey"
+                                   :margin 1
+                                   :background-color (:color cell)}}
+                     (str (:num cell))]))))))
+
+
 ;;
 
 
@@ -135,7 +163,7 @@
 
 
 ;; TODO reflections/rotations
-;; TODO weighted by num of occurrence
+;; TODO weighted by (frequencies)
 (defn patterns-from-sample
   [sample]
   (let [sample-width (count (first sample))
@@ -188,12 +216,27 @@
                 [offset (valid-patterns patterns pattern offset)])))))
 
 
-(defn finished?
-  [coefficient-matrix])
+(defn build-matrix
+  [w h num-patterns]
+  (vec (repeat h
+               (vec (repeat w
+                            (vec (repeat num-patterns true)))))))
 
 
-(defn output
-  [coefficient-matrix])
+;; cell: vector
+;;   idx = pattern idx
+;;   val = boolean - still valid option
+;; ret: sum of freq of true pattern ids in source
+(defn entropy
+  [cell]
+  (reduce
+   (fn [total valid?]
+     (if valid?
+       ;; TODO freq info
+       (+ 1 total)
+       total))
+   -1
+   cell))
 
 
 ;; find lowest entropy (# of possibilities?)
@@ -204,29 +247,33 @@
 ;    set the boolean array in this cell to false, except
 ;     for the chosen pattern
 (defn observe
-  [coefficient-matrix]
-  coefficient-matrix)
+  [wave]
+  wave)
 
 
 (defn propagate
-  [coefficient-matrix]
-  coefficient-matrix)
+  [wave]
+  wave)
 
 
 (defn run
   [{:keys [sample output-w output-h]}]
   (let [patterns (patterns-from-sample sample)
         offsets (build-offsets pattern-width pattern-height)
-        overlap-index (build-overlap-index patterns offsets)]
-    (loop [coefficient-matrix {}]
-      (if (finished? coefficient-matrix)
-        coefficient-matrix
-        (recur (-> coefficient-matrix
-                   (observe)
-                   (propagate)))))))
+        overlap-index (build-overlap-index patterns offsets)]))
+    ; (loop [wave (build-matrix output-w output-h (count patterns))]
+    ;   (if (finished? wave)
+    ;     wave
+    ;     (recur (-> wave
+    ;                (observe)
+    ;                (propagate)))))))
 
 
 ;;
+
+
+(def o-w 4)
+(def o-h 3)
 
 
 (def sample
@@ -252,3 +299,24 @@
 (def overlap-index (build-overlap-index patterns offsets))
 (defcard-rg overlap-index-render
   (render-overlap-index patterns overlap-index))
+
+
+(def wave (build-matrix o-w o-h (count patterns)))
+(defcard wave wave)
+(defcard-rg wave-render
+  (render-wave wave patterns))
+
+
+(defonce test-wave (reagent.core/atom wave))
+(defn test-render [] (render-wave @test-wave patterns))
+(defcard-rg test
+  [:div
+   [test-render]
+   [:div
+    [:button {:on-click #(swap! test-wave observe)}
+     "observe"]
+    [:button {:on-click #(swap! test-wave propagate)}
+     "propagate"]]]
+  test-wave
+  {:history true
+   :inspect-data true})
