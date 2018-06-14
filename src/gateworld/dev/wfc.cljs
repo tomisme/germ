@@ -69,17 +69,33 @@
          patterns)))
 
 
-(defn render-overlaps
+(defn render-overlap
   [pattern overlap-index]
-  [:div {:style {:margin 60
-                 :position "relative"}}
-   (render-pattern pattern)
-   [:div {:style {:position "absolute"
-                  :left -30
-                  :top -30
-                  :opacity 0.3}}
-    (render-pattern pattern)]])
+  [:div {:style {:display "flex"
+                 :margin 5}}
+   [:div {:style {:margin 5}}
+    (render-pattern pattern)]
+   (into [:div]
+         (for [[[offset-x offset-y] overlapping-patterns] overlap-index]
+           [:div {:style {:display "flex"
+                          :border "1px solid grey"
+                          :padding 5
+                          :margin 5}}
+            [:div (str "(" offset-x "," offset-y ")")]
+            (into [:div {:style {:display "flex"
+                                 :flex-wrap "wrap"}}]
+                  (for [p overlapping-patterns]
+                    [:div {:style {:margin 5}}
+                     (render-pattern p)]))]))])
 
+
+(defn render-overlap-index
+  [patterns overlap-index]
+  (into [:div]
+        (map-indexed (fn [idx pattern]
+                       [:div
+                        (render-overlap pattern (nth overlap-index idx))])
+                     patterns)))
 
 ;;
 
@@ -108,6 +124,7 @@
          (recur (inc x) y (conj offsets [x y])))))))
 
 
+;; TODO periodic input (pattern can wrap sample)
 (defn get-pattern-at
   [sample x y]
   (vec (for [i (range pattern-height)]
@@ -117,6 +134,8 @@
            (+ x pattern-width)))))
 
 
+;; TODO reflections/rotations
+;; TODO weighted by num of occurrence
 (defn patterns-from-sample
   [sample]
   (let [sample-width (count (first sample))
@@ -127,39 +146,54 @@
       (if (> x (- sample-width pattern-width))
         (recur 0 (inc y) patterns)
         (if (> y (- sample-height pattern-height))
-          patterns
+          (vec (distinct patterns))
           (recur (inc x) y (conj patterns (get-pattern-at sample x y))))))))
 
 
-;; does p2 (with x/y offset) fit on top of p1?
-(defn overlaps?
+(defn agrees?
   [p1 p2 x-offset y-offset]
-  (= p1 p2))
+  (let [p1-start-x (if (pos? x-offset) x-offset 0)
+        p1-start-y (if (pos? y-offset) y-offset 0)
+        overlap-width (- pattern-width (.abs js/Math x-offset))
+        overlap-height (- pattern-height (.abs js/Math y-offset))
+        p1-end-x (+ p1-start-x overlap-width)
+        p1-end-y (+ p1-start-y overlap-height)]
+    (loop [p1-x p1-start-x
+           p1-y p1-start-y]
+      (if (= p1-x p1-end-x)
+        (recur p1-start-x (inc p1-y))
+        (if (= p1-y p1-end-y)
+          true
+          (if (= (-> p1
+                     (nth p1-y)
+                     (nth p1-x))
+                 (-> p2
+                     (nth (+ p1-y (* -1 y-offset)))
+                     (nth (+ p1-x (* -1 x-offset)))))
+            (recur (inc p1-x) p1-y)
+            false))))))
 
 
 (defn valid-patterns
   [patterns under-pattern [x-offset y-offset]]
   (filterv (fn [over-pattern]
-             (overlaps? under-pattern over-pattern x-offset y-offset))
+             (agrees? under-pattern over-pattern x-offset y-offset))
            patterns))
 
 
 (defn build-overlap-index
-  [patterns]
+  [patterns offsets]
   (vec (for [pattern patterns]
-         (vec (for [offset (build-offsets pattern-width pattern-height)]
+         (vec (for [offset offsets]
                 [offset (valid-patterns patterns pattern offset)])))))
 
 
-;;
 (defn finished?
-  [coefficient-matrix]
-  false)
+  [coefficient-matrix])
 
 
 (defn output
-  [coefficient-matrix]
-  (.log js/console coefficient-matrix))
+  [coefficient-matrix])
 
 
 ;; find lowest entropy (# of possibilities?)
@@ -180,9 +214,10 @@
 
 
 (defn run
-  [sample]
+  [{:keys [sample output-w output-h]}]
   (let [patterns (patterns-from-sample sample)
-        overlap-index (build-overlap-index patterns)]
+        offsets (build-offsets pattern-width pattern-height)
+        overlap-index (build-overlap-index patterns offsets)]
     (loop [coefficient-matrix {}]
       (if (finished? coefficient-matrix)
         coefficient-matrix
@@ -194,43 +229,26 @@
 ;;
 
 
-(def red-maze-sample
+(def sample
   [[:white :white :white :white]
    [:white :black :black :black]
    [:white :black :red :black]
    [:white :black :black :black]])
+(defcard sample sample)
+(defcard-rg sample-render
+  (render-pattern sample))
 
 
-(defcard red-maze-sample red-maze-sample)
+(def patterns (patterns-from-sample sample))
+(defcard patterns patterns)
+(defcard-rg patterns-render
+  (render-patterns patterns))
 
 
-(defcard-rg red-maze-sample-render
-  (render-pattern red-maze-sample))
+(def offsets (build-offsets pattern-width pattern-height))
+(defcard offsets offsets)
 
 
-(defcard red-maze-patterns
-  (patterns-from-sample red-maze-sample))
-
-
-(defcard-rg red-maze-patterns-render
-  (render-patterns (patterns-from-sample red-maze-sample)))
-
-
-(defcard offsets
-  (build-offsets pattern-width pattern-height))
-
-
-(defcard red-maze-overlap-index-first
-   (nth (build-overlap-index (patterns-from-sample red-maze-sample))
-        0))
-
-
-(defcard-rg red-maze-overlap-first-render
-  (render-overlaps
-   (first (patterns-from-sample red-maze-sample))
-   (nth (build-overlap-index (patterns-from-sample red-maze-sample))
-        0)))
-
-
-(defcard red-maze-overlap-index
-  (build-overlap-index (patterns-from-sample red-maze-sample)))
+(def overlap-index (build-overlap-index patterns offsets))
+(defcard-rg overlap-index-render
+  (render-overlap-index patterns overlap-index))
