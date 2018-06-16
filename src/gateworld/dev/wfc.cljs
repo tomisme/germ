@@ -5,6 +5,9 @@
    [devcards.core :refer [defcard defcard-rg]]))
 
 
+(defn d [x] (let [_ (js/console.log x)] x))
+
+
 ; defn FindLowestEntropy(coefficient_matrix):
 ;   Return the cell that has the lowest greater-than-zero
 ;    entropy, defined as:
@@ -121,8 +124,9 @@
                                    :height 25
                                    :border "1px solid grey"
                                    :margin 1
-                                   :background-color (:color cell)}}
-                     (str (:num cell))]))))))
+                                   :background-color (or (:color cell)
+                                                         "yellow")}}
+                     (if-not (:color cell) (str (:num cell)))]))))))
 
 
 ;;
@@ -239,16 +243,82 @@
    cell))
 
 
-;; find lowest entropy (# of possibilities?)
-;; if contradiction, bail out
-;; if all cells at entropy 0, we're done!
-;;  else, choose a pattern by a random sample
-;;   (weighted by the pattern frequency in the source data)
-;    set the boolean array in this cell to false, except
-;     for the chosen pattern
+(defn wave-entropies
+  [wave]
+  (let [max-y (dec (count wave))
+        max-x (dec (count (first wave)))]
+    (loop [x 0
+           y 0
+           entropies '()]
+      (if (> y max-y)
+        entropies
+        (if (> x max-x)
+          (recur 0 (inc y) entropies)
+          (let [e (entropy (-> wave (nth y) (nth x)))]
+            (recur (inc x) y (conj entropies {:x x
+                                              :y y
+                                              :entropy e}))))))))
+
+
+(defn analyze-entropies
+  [entropies]
+  (reduce
+   (fn [r cell]
+     (let [low-num (:low-num r)
+           entropy (:entropy cell)]
+       (cond
+         (:contradiction r) r
+
+         (< entropy 0)
+         (assoc r :contradiction true)
+
+         (= entropy 0) r
+
+         (or (not low-num) (< entropy low-num))
+         (-> r
+             (assoc :low-num entropy)
+             (assoc :low-cells (list cell)))
+
+         (= entropy low-num)
+         (update-in r [:low-cells] conj cell)
+
+         :else r)))
+   {:low-num nil
+    :low-cells '()
+    :contradiction false}
+   entropies))
+
+
+(defn resolve-cell
+  [wave x y]
+  (update-in wave [y x] (fn [cell]
+                          (assoc
+                           (vec (repeat (count cell) false))
+                           (rand-nth (reduce-kv
+                                      (fn [r pattern-idx y?]
+                                        (if y?
+                                          (conj r pattern-idx)
+                                          r))
+                                      []
+                                      cell))
+                           true))))
+
+
 (defn observe
   [wave]
-  wave)
+  (let [e-details (analyze-entropies (wave-entropies wave))]
+    (cond
+      (:contradiction e-details)
+      (let [_ (js/console.log "contradiction!" wave)]
+        wave)
+
+      (empty? (:low-cells e-details))
+      (let [ _ (js/console.log "done!" wave)]
+        wave)
+
+      :else
+      (let [cell (rand-nth (:low-cells e-details))]
+        (resolve-cell wave (:x cell) (:y cell))))))
 
 
 (defn propagate
