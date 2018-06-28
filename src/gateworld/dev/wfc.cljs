@@ -66,51 +66,56 @@
 
 (defn render-wave
   [wave patterns]
-  (let [grid (vec (for [row wave]
-                    (vec (for [cell row]
-                           (let [freq (frequencies cell)
-                                 num-valid (get freq true)]
-                             {:num num-valid
-                              :color (if (not= num-valid 1)
-                                       nil
-                                       (loop [i 0]
-                                         (if (nth cell i)
-                                           (first (first (nth patterns i)))
-                                           (recur (inc i)))))})))))]
+  (let [grid (for [row wave]
+               (for [cell row]
+                 (let [num-valid (get (frequencies cell) true)]
+                   {:num num-valid
+                    :color (if (not= num-valid 1)
+                             nil
+                             (loop [i 0]
+                               (if (nth cell i)
+                                 (first (first (nth patterns i)))
+                                 (recur (inc i)))))})))]
     (into [:div]
           (for [row grid]
             (into [:div {:style {:display "flex"}}]
                   (for [cell row]
-                    [:div {:style {:width 25
-                                   :height 25
-                                   :border "1px solid grey"
-                                   :margin 1
+                    [:div {:style {:width 32
+                                   :height 32
                                    :background-color (or (:color cell)
                                                          "yellow")}}
-                     (if-not (:color cell) (str (:num cell)))]))))))
+                     (if-not (:color cell)
+                      [:div {:style {:height "100%"
+                                     :display "flex"}}
+                       [:div {:style {:display "flex"
+                                      :width "100%"
+                                      :justify-content "center"
+                                      :align-items "center"}}
+                        [:span (str (:num cell))]]])]))))))
 
 
 ;;
 
 
-;; TODO get rid of these globals
-(def pattern-width 2)
-(def pattern-height 2)
-
-
 (defn get-2d
   [arr [x y]]
-  (-> arr
-      (nth y)
-      (nth x)))
+  (-> arr (nth y) (nth x)))
+
+
+(defn update-2d
+  [arr [x y] f]
+  (update-in arr [y x] f))
+
+
+;;
 
 
 (defn build-offsets
-  [pattern-width pattern-height]
-  (let [min-x (- (dec pattern-width))
-        min-y (- (dec pattern-height))
-        max-x (dec pattern-width)
-        max-y (dec pattern-height)]
+  [[width height]]
+  (let [min-x (- (dec width))
+        min-y (- (dec height))
+        max-x (dec width)
+        max-y (dec height)]
    (loop [x min-x
           y min-y
           offsets []]
@@ -123,76 +128,84 @@
 
 ;; TODO periodic input (patterns can wrap sample)
 (defn get-pattern-at
-  [sample x y]
-  (vec (for [i (range pattern-height)]
+  [sample x y w h]
+  (vec (for [i (range h)]
           (subvec
            (nth sample (+ y i))
            x
-           (+ x pattern-width)))))
+           (+ x w)))))
 
 
 ;; TODO reflections/rotations
-;; TODO weighted by (frequencies)
+;; TODO weighted by frequency
 (defn patterns-from-sample
-  [sample]
-  (let [sample-width (count (first sample))
+  [sample pattern-size]
+  (let [[pattern-width pattern-height] pattern-size
+        sample-width (count (first sample))
         sample-height (count sample)]
     (loop [x 0
            y 0
            patterns []]
       (if (> x (- sample-width pattern-width))
-        (recur 0 (inc y) patterns)
+        (recur
+         0
+         (inc y)
+         patterns)
         (if (> y (- sample-height pattern-height))
           (vec (distinct patterns))
-          (recur (inc x) y (conj patterns (get-pattern-at sample x y))))))))
+          (recur
+           (inc x)
+           y
+           (conj patterns
+                 (get-pattern-at sample x y pattern-width pattern-height))))))))
 
 
 (defn agrees?
-  [p1 p2 x-offset y-offset]
+  [p1 p2 x-offset y-offset [pattern-width pattern-height]]
   (let [p1-start-x (if (pos? x-offset) x-offset 0)
         p1-start-y (if (pos? y-offset) y-offset 0)
         overlap-width (- pattern-width (.abs js/Math x-offset))
         overlap-height (- pattern-height (.abs js/Math y-offset))
         p1-end-x (+ p1-start-x overlap-width)
         p1-end-y (+ p1-start-y overlap-height)]
+    ;; check each overlapping cell pair
     (loop [p1-x p1-start-x
            p1-y p1-start-y]
       (if (= p1-x p1-end-x)
         (recur p1-start-x (inc p1-y))
         (if (= p1-y p1-end-y)
+          ;; all pairs matched
           true
-          (if (= (-> p1
-                     (nth p1-y)
-                     (nth p1-x))
-                 (-> p2
-                     (nth (+ p1-y (* -1 y-offset)))
-                     (nth (+ p1-x (* -1 x-offset)))))
+          (if (= (get-2d p1 [p1-x p1-y])
+                 (get-2d p2 [(+ p1-x (* -1 x-offset))
+                             (+ p1-y (* -1 y-offset))]))
             (recur (inc p1-x) p1-y)
+            ;; a pair didn't match
             false))))))
 
 
 (defn valid-patterns
-  [patterns under-pattern [x-offset y-offset]]
+  [patterns under-pattern [x-offset y-offset] pattern-size]
   (reduce-kv (fn [s idx over-pattern]
-               (if (agrees? under-pattern over-pattern x-offset y-offset)
+               (if (agrees? under-pattern over-pattern x-offset y-offset pattern-size)
                  (conj s idx)
                  s))
              #{}
              patterns))
 
 
-(defn build-overlap-index
-  [patterns offsets]
+(defn build-constraints
+  [patterns offsets pattern-size]
   (vec (for [pattern patterns]
          (into {} (for [offset offsets]
-                    [offset (valid-patterns patterns pattern offset)])))))
+                    [offset (valid-patterns patterns pattern offset pattern-size)])))))
 
 
-(defn build-wave
-  [w h num-patterns]
+(defn initialize-wave
+  [[w h] num-possibilities]
   (vec (repeat h
                (vec (repeat w
-                            (vec (repeat num-patterns true)))))))
+                            (vec (repeat num-possibilities true)))))))
 
 
 ;; TODO use freq info
@@ -218,10 +231,9 @@
         entropies
         (if (> x max-x)
           (recur 0 (inc y) entropies)
-          (let [e (cell-entropy (-> wave (nth y) (nth x)))]
-            (recur (inc x) y (conj entropies {:x x
-                                              :y y
-                                              :entropy e}))))))))
+          (recur (inc x) y (conj entropies {:x x
+                                            :y y
+                                            :entropy (cell-entropy (get-2d wave [x y]))})))))))
 
 
 (defn analyze-entropies
@@ -258,16 +270,18 @@
    entropies))
 
 
-(defn collapse-cell
+;; pick a random true and set everything else to false
+;; TODO weighted by frequency info?
+(defn observe-cell
   [cell]
   (assoc
    (vec (repeat (count cell) false))
    (rand-nth (reduce-kv
-              (fn [r pattern-idx y?]
+              (fn [col idx y?]
                 (if y?
-                  (conj r pattern-idx)
-                  r))
-              []
+                  (conj col idx)
+                  col))
+              '()
               cell))
    true))
 
@@ -285,20 +299,21 @@
         [wave nil])
 
       :else
-      (let [cell (rand-nth (:low-cells e-details))]
-        [(update-in wave [(:y cell) (:x cell)] collapse-cell)
-         [(:x cell) (:y cell)]]))))
+      (let [{:keys [x y]} (rand-nth (:low-cells e-details))
+            wave' (update-2d wave [x y] observe-cell)]
+        [wave' [x y]]))))
 
 
+;; TODO should neighbors wrap output?
 (defn build-neighbor-offsets
-  [offsets width height [x-pos y-pos]]
+  [offsets [output-width output-height] [x-pos y-pos]]
   (filter (fn [[x-offset y-offset]]
             (let [x (+ x-pos x-offset)
                   y (+ y-pos y-offset)]
               (and (>= x 0)
-                   (< x width)
+                   (< x output-width)
                    (>= y 0)
-                   (< y height))))
+                   (< y output-height))))
           offsets))
 
 
@@ -321,112 +336,124 @@
         C2)))
 
 
+(defn constrain-neighbor
+  [wave constraints C1 C2-pos offset]
+  ;; reduce possibility space of C2
+  (update-2d wave C2-pos #(constrained-neighbor constraints C1 % offset)))
+
+
 (defn propagate-next
-  [initial-wave constraints initial-frontier offsets width height]
-  (let [C1-pos (peek initial-frontier)
+  [initial-wave constraints initial-frontier offsets size]
+  (let [;; take C1 off of the queue
+        C1-pos (peek initial-frontier)
         C1 (get-2d initial-wave C1-pos)
-        neighbor-offsets (build-neighbor-offsets offsets width height C1-pos)]
-    (loop [wave initial-wave
-           frontier (pop initial-frontier)
-           i 0]
-      (if (< i (count neighbor-offsets))
-        (let [offset (nth neighbor-offsets i)
-              [x-offset y-offset] offset
-              [C1-x C1-y] C1-pos
-              C2-x (+ C1-x x-offset)
-              C2-y (+ C1-y y-offset)
-              wave' (update-in
-                     wave
-                     [C2-y C2-x]
-                     (fn [C2]
-                       (constrained-neighbor constraints C1 C2 offset)))]
-          (if (= wave' wave)
-            (recur wave frontier (inc i))
-            (recur wave' (conj frontier [C2-x C2-y]) (inc i))))
-        [wave frontier]))))
+        popped-frontier (pop initial-frontier)]
+    (reduce
+     (fn [[wave frontier] offset]
+       (let [[x-offset y-offset] offset
+             [C1-x C1-y] C1-pos
+             C2-pos [(+ C1-x x-offset) (+ C1-y y-offset)]
+             ;; C1 has been affected by an observation/propagation
+             ;; constrain neighbor (C2) against this new C1
+             wave' (constrain-neighbor wave constraints C1 C2-pos offset)
+             ;; propagate any changes to C2 to its neighbors
+             frontier' (if (= wave' wave)
+                         frontier
+                         (conj frontier C2-pos))]
+         [wave' frontier']))
+     [initial-wave popped-frontier]
+     (build-neighbor-offsets offsets size C1-pos))))
 
 
 (defn propagate
-  [initial-wave constraints pos offsets width height]
+  [initial-wave constraints start-pos offsets size]
   (loop [wave initial-wave
-         frontier #queue [pos]]
+         ;; constrain in a breadth-first search
+         ;; each node constrains each of its neighbors
+         ;; adding neighbors that change to the end of the queue
+         frontier #queue [start-pos]]
     (if (empty? frontier)
       wave
       (let [[wave' frontier']
-            (propagate-next wave constraints frontier offsets width height)]
+            (propagate-next wave constraints frontier offsets size)]
         (recur wave' frontier')))))
 
 
 (defn run
-  [{:keys [patterns pattern-width pattern-height width height]}]
-  (let [offsets (build-offsets pattern-width pattern-height)
-        constraints (build-overlap-index patterns offsets)
-        initial-wave (build-wave width height (count patterns))]
+  [{:keys [patterns pattern-size width height]}]
+  (let [offsets (build-offsets pattern-size)
+        ;; each pattern can only overlap other patterns
+        ;; in ways found in the source image
+        constraints (build-constraints patterns offsets pattern-size)
+        ;; initially, any pattern could be at any location
+        initial-wave (initialize-wave [width height] (count patterns))]
     (loop [wave initial-wave]
-      (let [[obs-wave observed-pos] (observe wave)]
-        (if (= obs-wave wave)
+      ;; select a cell from those with the lowest entropy
+      ;; and reduce it to a single possibility
+      (let [[wave' pos] (observe wave)]
+        ;; if no cell could be selected, we're done!
+        (if-not pos
           wave
-          (recur (propagate obs-wave constraints observed-pos offsets width height)))))))
+          ;; walk over possibly affected cells,
+          ;; reduce possibilities until whole wave is stable again
+          ;; or there is a contradiction!
+          (recur (propagate wave' constraints pos offsets [width height])))))))
 
 
-;;
+;; devcards
 
+
+(def test-pattern-size [2 2])
 
 (def sample
-  [[:white :white :black :white :white :white]
-   [:white :black :black :black :white :white]
-   [:white :red :yellow :red :white :white]
+  [[:white :white :white :white :white :white]
+   [:white :black :black :black :black :white]
+   [:white :orange :green :white :white :white]
    [:white :black :black :black :white :white]
    [:white :white :white :black :white :white]])
-#_(defcard sample sample)
-
-
-(defcard-rg full-render
-  (let [patterns (patterns-from-sample sample)]
-    (render-wave
-     (run {:patterns patterns
-           :pattern-width 2
-           :pattern-height 2
-           :width 20
-           :height 20})
-     patterns)))
-
+(defcard sample sample)
 
 (defcard-rg sample-render
   (render-pattern sample))
 
+(defcard-rg full-render
+  (let [patterns (patterns-from-sample sample test-pattern-size)]
+    (render-wave
+     (run {:patterns patterns
+           :pattern-size test-pattern-size
+           :width 16
+           :height 16})
+     patterns)))
 
-(def patterns (patterns-from-sample sample))
-#_(defcard patterns patterns)
+(def patterns (patterns-from-sample sample test-pattern-size))
+(defcard patterns patterns)
 (defcard-rg patterns-render
   (render-patterns patterns))
 
+(def offsets (build-offsets test-pattern-size))
+(defcard offsets offsets)
 
-(def offsets (build-offsets pattern-width pattern-height))
-#_(defcard offsets offsets)
-
-
-(def overlap-index (build-overlap-index patterns offsets))
+(def overlap-index
+  (build-constraints patterns offsets test-pattern-size))
 (defcard overlap-index overlap-index)
 (defcard-rg overlap-index-render
   (render-overlap-index patterns overlap-index))
 
+(def wave (initialize-wave [5 5] (count patterns)))
+(defcard wave wave)
+(defcard-rg wave-render
+  (render-wave wave patterns))
 
-#_(def wave (build-wave 5 5 (count patterns)))
-#_(defcard wave wave)
-#_(defcard-rg wave-render
-    (render-wave wave patterns))
-
-#_(defonce test-wave (reagent.core/atom wave))
-#_(defn test-render [] (render-wave @test-wave patterns))
-#_(defcard-rg stepped-test
-    [:div
-     [test-render]
-     [:div
-      [:button {:on-click #()}
-       "observe"]
-      [:button {:on-click #()}
-       "propagate"]]]
-    test-wave
-    {:history true
-     :inspect-data true})
+(defonce test-wave (reagent.core/atom wave))
+(defn test-render [] (render-wave @test-wave patterns))
+(defcard-rg stepped-test
+  [:div
+   [test-render]
+   [:div
+    [:button {:on-click #()}
+     "observe"]
+    [:button {:on-click #()}
+     "propagate"]]]
+  test-wave
+  {:history true
+   :inspect-data true})
