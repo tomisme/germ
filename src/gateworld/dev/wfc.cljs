@@ -5,7 +5,13 @@
    [devcards.core :refer [defcard defcard-rg]]))
 
 
+;;
+
+
 (defn d [x] (let [_ (js/console.log x)] x))
+
+
+;;
 
 
 (defn render-pattern
@@ -337,8 +343,8 @@
 
 
 (defn constrain-neighbor
+  "Reduce possibility space of C2"
   [wave constraints C1 C2-pos offset]
-  ;; reduce possibility space of C2
   (update-2d wave C2-pos #(constrained-neighbor constraints C1 % offset)))
 
 
@@ -400,7 +406,7 @@
           (recur (propagate wave' constraints pos offsets [width height])))))))
 
 
-;; devcards
+;; dev
 
 
 (def test-pattern-size [2 2])
@@ -421,8 +427,8 @@
     (render-wave
      (run {:patterns patterns
            :pattern-size test-pattern-size
-           :width 16
-           :height 16})
+           :width 8
+           :height 8})
      patterns)))
 
 (def patterns (patterns-from-sample sample test-pattern-size))
