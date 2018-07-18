@@ -10,6 +10,10 @@
                  :margin-right 10
                  :padding 10}}
    (into [:ul {:style {:padding-left 15}}]
-         (map (fn [s]
-                [:li s])
-              @(rf/subscribe [:story-items])))])
+         (map (fn [x] [:li x])
+              @(rf/subscribe [:story-items])))
+   [:div {:style {:margin-top 20}}
+    "What next?"]
+   (into [:ul {:style {:padding-left 15}}]
+         (map (fn [x] [:li x])
+              @(rf/subscribe [:next-actions])))])

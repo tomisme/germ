@@ -17,7 +17,7 @@
 
 
 (def empty-combat-state
-  {:chars []
+  {:chars [empty-char]
    :active-char 0
    :fx []})
 

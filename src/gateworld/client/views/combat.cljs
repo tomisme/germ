@@ -10,13 +10,16 @@
                                 char-idx
                                 perm-idx])]
     [:div {:style {:cursor "pointer"
-                   :padding 10
-                   :margin 5
-                   :border "1px solid"}
+                   :background "rgb(240,240,240)"
+                   :padding 12
+                   :margin 5}
            :on-click on-click}
-     [:div name]
+     [:div {:style {:font-size 20}}
+      name]
      (when (or attack toughness)
-       [:div attack "/" toughness])]))
+       [:div {:style {:display "flex"
+                      :justify-content "flex-end"}}
+        [:span attack "/" toughness]])]))
 
 
 (defn field-component
@@ -27,13 +30,20 @@
                        (field-permanent-el char-idx perm-idx card))
                      @(rf/subscribe [:field-cards char-idx]))))
 
+(defn hand-card-el
+  [x]
+  [:div {:style {:padding 12
+                 :margin 5
+                 :border "3px dashed"}}
+   (:name x)])
+
 
 (defn hand-component
   []
   [:div]
   (into [:div {:style {:display "flex"
                        :margin 10}}]
-        (map field-permanent-el @(rf/subscribe [:hand-cards 0]))))
+        (map hand-card-el @(rf/subscribe [:hand-cards 0]))))
 
 
 (defn main-component
