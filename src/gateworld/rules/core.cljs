@@ -5,7 +5,7 @@
    [devcards.core :refer [defcard]]))
 
 
-(def combat-move-types
+(def conflict-move-types
   #{:activate-ability
     :pass-priority})
 
@@ -16,7 +16,7 @@
    :in-hand []})
 
 
-(def empty-combat-state
+(def empty-conflict-state
   {:chars [empty-char]
    :active-char 0
    :fx []})
@@ -76,8 +76,8 @@
 
 
 (defcard empty-char empty-char)
-(defcard empty-combat-state empty-combat-state)
+(defcard empty-conflict-state empty-conflict-state)
 
-(defcard combat-move-types combat-move-types)
+(defcard conflict-move-types conflict-move-types)
 (defcard effect-types effect-types)
 (defcard effect-attributes effect-attributes)

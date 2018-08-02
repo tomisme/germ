@@ -5,9 +5,7 @@
    [re-frame.core :as rf]
    [gateworld.client.core]
    [gateworld.client.lang]
-   [gateworld.client.views]
-   [gateworld.client.views.editor]
-   [gateworld.client.views.map])
+   [gateworld.client.views])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg]]))
 
@@ -25,8 +23,8 @@
      [:button {:on-click #(rf/dispatch [:initialise])}
       "Init"]]
     [:div {:style {:margin-top 10}}
-     [:button {:on-click #(rf/dispatch [:start-combat-practise])}
-      "Start Combat"]]]])
+     [:button {:on-click #(rf/dispatch [:start-conflict-practise])}
+      "Start Conflict"]]]])
 
 
 (defcard-rg ui

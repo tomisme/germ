@@ -4,14 +4,14 @@
    [gateworld.client.db]
    [gateworld.client.events]
    [gateworld.client.subs]
-   [gateworld.client.views.intro :refer [intro-component]]
-   [gateworld.client.views.combat :refer [combat-component]]))
+   [gateworld.client.views.intro :refer [intro-view]]
+   [gateworld.client.views.conflict :refer [conflict-view]]))
 
 
 (defn ui-component
   []
   [:div
    (condp = @(rf/subscribe [:active-view])
-          :combat [combat-component]
-          :intro [intro-component]
+          :conflict [conflict-view]
+          :intro [intro-view]
           [:span "Loading client..."])])

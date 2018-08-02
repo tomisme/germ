@@ -5,7 +5,7 @@
 
 (def views
   #{:intro
-    :combat
+    :conflict
     :map
     :editor
     :settings})

@@ -24,10 +24,10 @@
 (rf/reg-sub
   :field-cards
   (fn [db [_ char-idx]]
-    (get-in db [:combat-state :chars char-idx :permanents])))
+    (get-in db [:conflict-state :chars char-idx :permanents])))
 
 
 (rf/reg-sub
   :hand-cards
   (fn [db [_ char-idx]]
-    (get-in db [:combat-state :chars char-idx :in-hand])))
+    (get-in db [:conflict-state :chars char-idx :in-hand])))

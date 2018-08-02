@@ -5,17 +5,13 @@
    [devcards.core :refer [defcard defcard-rg]]))
 
 
-(defn intro-component
+(defn intro-view
   []
   [:div
    [:h1
     "Gateworld256"]
    [:ul
     [:li
-     "World Map"]
-    [:li
      [:a {:style {:cursor "pointer"}
-          :on-click #(rf/dispatch [:start-combat-practise])}
-      "Combat Practise"]]
-    [:li
-     "World Editor"]]])
+          :on-click #(rf/dispatch [:start-conflict-practise])}
+      "Conflict Practise"]]]])
