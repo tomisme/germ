@@ -1,10 +1,10 @@
 (ns gateworld.dev.core
   (:require
-   [gateworld.dev.wfc]
    [devcards.core]
+   [gateworld.dev.lang]
+   [gateworld.dev.wfc]
    [re-frame.core :as rf]
    [gateworld.client.core]
-   [gateworld.client.lang]
    [gateworld.client.views])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg]]))

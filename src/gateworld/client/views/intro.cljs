@@ -9,7 +9,7 @@
   []
   [:div
    [:h1
-    "Gateworld256"]
+    "What next?"]
    [:ul
     [:li
      [:a {:style {:cursor "pointer"}

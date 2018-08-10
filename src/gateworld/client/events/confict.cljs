@@ -1,6 +1,8 @@
 (ns gateworld.client.events.conflict
   (:require
-   [gateworld.rules.core :as rules]))
+   [gateworld.rules.core :as rules])
+  (:require-macros
+   [devcards.core :refer [defcard]]))
 
 
 (def rock-card {:name "Rock"})
@@ -40,3 +42,9 @@
                        "Play Blob"
                        "Attack with Blob"
                        "Pass"])))
+
+
+;;
+
+
+(defcard a)

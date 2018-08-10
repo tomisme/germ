@@ -1,7 +1,8 @@
 (ns gateworld.client.views.conflict
   (:require
    [re-frame.core :as rf]
-   [gateworld.client.components.story :refer [story-component]]))
+   [gateworld.client.components.story :refer [story-component]]
+   [gateworld.client.components.card]))
 
 
 ;; reagent elements

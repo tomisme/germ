@@ -1,10 +1,13 @@
-(ns gateworld.client.lang
+(ns gateworld.dev.lang
   (:require-macros
     [devcards.core :refer [defcard defcard-rg]]))
 
 
 (def rules-symbols
   {:icon/ruling "icons/noun_1710142_cc.svg"})
+
+
+;;
 
 
 (defcard rules-symbols
