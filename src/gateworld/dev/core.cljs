@@ -3,6 +3,7 @@
    [devcards.core]
    [gateworld.dev.lang]
    [gateworld.dev.wfc]
+   [gateworld.dev.animals]
    [re-frame.core :as rf]
    [gateworld.client.core]
    [gateworld.client.views])

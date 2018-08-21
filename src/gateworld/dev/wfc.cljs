@@ -278,6 +278,7 @@
 
 ;; pick a random true and set everything else to false
 ;; TODO weighted by frequency info?
+;; TODO pseudo-random-nth
 (defn observe-cell
   [cell]
   (assoc
@@ -305,6 +306,7 @@
         [wave nil])
 
       :else
+      ;; TODO pseudo-random-nth
       (let [{:keys [x y]} (rand-nth (:low-cells e-details))
             wave' (update-2d wave [x y] observe-cell)]
         [wave' [x y]]))))
