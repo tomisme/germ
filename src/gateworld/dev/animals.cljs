@@ -81,7 +81,8 @@
    :fx {}})
 (def crow-card
   {:name "Crow"
-   :fx {:gain-cards [peck-card fly-card speak-card]}})
+   :fx {:gain-random-cards {:cards [peck-card fly-card speak-card]
+                            :num 2}}})
 (def goat-card
   {:name "Goat"
    :fx {}})
@@ -93,40 +94,60 @@
 ;;
 
 
-(defn gen-outcomes
-  [state])
-
-
 (defn select-outcome
-  [state]
-  (let [possible-outcomes (gen-outcomes state)
-        story-str (pr-str (:story state))]
+  [state possible-outcomes]
+  (let [story-str (pr-str (:story state))]
     (pseudo-random-nth (hash256 story-str) possible-outcomes)))
 
 
-(defn starting-state
-  []
-  {:cards [crow-card goat-card rat-card]
-   :field []
-   :story {:seed (hash256 "hello")
-           :card-picks '()}})
+(defn gain-random-cards
+  [state {:keys [gain-random-cards]}]
+  (let [{:keys [cards num]} gain-random-cards
+        ;; TODO pick num * cards
+        card (select-outcome state cards)]
+    (update state :cards conj card)))
+
+
+(defn resolve-card-fx
+  [state idx]
+  (let [fx (-> state :cards (nth idx) :fx)]
+    (cond-> state
+            (:gain-random-cards fx) (gain-random-cards fx))))
+
+
+(defn pick-card
+  [state idx]
+  (-> state
+      (update-in [:story :card-picks] conj idx)
+      (resolve-card-fx idx)))
 
 
 ;;
 
 
-(def state-atom (rg/atom (starting-state)))
+(def state-atom
+  (reagent.core/atom
+   {:cards [crow-card goat-card rat-card]
+    :story {:seed (hash256 "abc")
+            :card-picks '()}}))
+
+
+(defn animals-component
+  []
+  [:div
+   (into [:div {:style {:display "flex"}}]
+         (map-indexed
+          (fn [idx card]
+            [:div {:style {:background "green"
+                           :margin 10
+                           :padding 10}
+                   :on-click #(swap! state-atom pick-card idx)}
+             (:name card)])
+          (:cards @state-atom)))])
 
 
 (defcard-rg animals
-  (fn [state-atom]
-    (let [state @state-atom]
-      [:div
-       (into [:div {:style {:display "flex"}}]
-             (for [card (:cards state)]
-               [:div {:style {:background "green"
-                              :margin 10
-                              :padding 10}}
-                (:name card)]))]))
+  animals-component
   state-atom
-  {:inspect-data true})
+  {:inspect-data true
+   :history true})
