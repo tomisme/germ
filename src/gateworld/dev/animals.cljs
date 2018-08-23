@@ -69,48 +69,61 @@
 
 ;;
 
+(def card-defs
+  {:peck
+   {:name "Peck"
+    :fx {}}
 
-(def peck-card
-  {:name "Peck"
-   :fx {}})
-(def fly-card
-  {:name "Fly"
-   :fx {}})
-(def speak-card
-  {:name "Speak"
-   :fx {}})
-(def crow-card
-  {:name "Crow"
-   :fx {:gain-random-cards {:cards [peck-card fly-card speak-card]
-                            :num 2}}})
-(def goat-card
-  {:name "Goat"
-   :fx {}})
-(def rat-card
-  {:name "Rat"
-   :fx {}})
+   :fly
+   {:name "Fly"
+    :fx {}}
+
+   :speak
+   {:name "Speak"
+    :fx {}}
+
+   :crow
+   {:name "Crow"
+    :fx {:gain-random-cards {:cards [:peck :fly :speak]
+                             :n 2}}}
+   :goat
+   {:name "Goat"
+    :fx {}}
+
+   :rat
+   {:name "Rat"
+    :fx {}}})
 
 
 ;;
 
 
 (defn select-outcome
-  [state possible-outcomes]
-  (let [story-str (pr-str (:story state))]
-    (pseudo-random-nth (hash256 story-str) possible-outcomes)))
+  ([state possibilities]
+   (select-outcome state possibilities 1))
+  ([state possibilities n]
+   (loop [i n
+          result '()]
+     (if (= i 0)
+       result
+       (let [input (-> state :story (assoc :nonce i) pr-str)
+             outcome (pseudo-random-nth (hash256 input) possibilities)]
+         (recur (dec i) (conj result outcome)))))))
+
+;;
 
 
 (defn gain-random-cards
   [state {:keys [gain-random-cards]}]
-  (let [{:keys [cards num]} gain-random-cards
-        ;; TODO pick num * cards
-        card (select-outcome state cards)]
-    (update state :cards conj card)))
+  (let [{:keys [cards n]} gain-random-cards
+        cards-to-add (map (fn [k] {:k k}) (select-outcome state cards n))]
+    (update state :cards #(into [] (concat % cards-to-add)))))
 
 
 (defn resolve-card-fx
   [state idx]
-  (let [fx (-> state :cards (nth idx) :fx)]
+  (let [k (-> state :cards (nth idx) :k)
+        fx (-> card-defs k :fx)]
     (cond-> state
             (:gain-random-cards fx) (gain-random-cards fx))))
 
@@ -125,9 +138,9 @@
 ;;
 
 
-(def state-atom
+(defonce state-atom
   (reagent.core/atom
-   {:cards [crow-card goat-card rat-card]
+   {:cards [{:k :crow} {:k :goat} {:k :rat}]
     :story {:seed (hash256 "abc")
             :card-picks '()}}))
 
@@ -135,14 +148,16 @@
 (defn animals-component
   []
   [:div
-   (into [:div {:style {:display "flex"}}]
+   (into [:div {:style {:display "flex"
+                        :flex-wrap "wrap"}}]
          (map-indexed
           (fn [idx card]
-            [:div {:style {:background "green"
-                           :margin 10
-                           :padding 10}
-                   :on-click #(swap! state-atom pick-card idx)}
-             (:name card)])
+            (let [{:keys [name]} (get card-defs (:k card))]
+              [:div {:style {:background "green"
+                             :margin 10
+                             :padding 10}
+                     :on-click #(swap! state-atom pick-card idx)}
+               name]))
           (:cards @state-atom)))])
 
 
