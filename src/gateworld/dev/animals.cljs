@@ -8,7 +8,7 @@
    [goog.testing PseudoRandom])
   (:require-macros
    [devcards.core :refer [defcard defcard-rg]]))
-
+(defn d [x] (js/console.log x) x)
 
 (defn string->bytes
   [s]
@@ -71,28 +71,24 @@
 
 (def card-defs
   {:peck
-   {:name "Peck"
-    :fx {}}
+   {:name "Peck"}
 
    :fly
-   {:name "Fly"
-    :fx {}}
+   {:name "Fly"}
 
    :speak
-   {:name "Speak"
-    :fx {}}
+   {:name "Speak"}
 
    :crow
    {:name "Crow"
-    :fx {:gain-random-cards {:cards [:peck :fly :speak]
-                             :n 2}}}
+    :fx (list [:discard-all]
+              [:gain-random-cards {:cards [:peck :fly :speak]
+                                   :n 2}])}
    :goat
-   {:name "Goat"
-    :fx {}}
+   {:name "Goat"}
 
    :rat
-   {:name "Rat"
-    :fx {}}})
+   {:name "Rat"}})
 
 
 ;;
@@ -114,18 +110,30 @@
 
 
 (defn gain-random-cards
-  [state {:keys [gain-random-cards]}]
-  (let [{:keys [cards n]} gain-random-cards
-        cards-to-add (map (fn [k] {:k k}) (select-outcome state cards n))]
-    (update state :cards #(into [] (concat % cards-to-add)))))
+  [state [_ {:keys [cards n]}]]
+  (let [to-add (map (fn [k]
+                      {:k k})
+                    (select-outcome state cards n))]
+    (update state :cards #(into [] (concat % to-add)))))
+
+
+(defn discard-all
+  [state _]
+  (assoc state :cards []))
+
+
+(defn resolve-effect
+  [state [k :as effect]]
+  (condp = k
+         :discard-all (discard-all state effect)
+         :gain-random-cards (gain-random-cards state effect)))
 
 
 (defn resolve-card-fx
   [state idx]
-  (let [k (-> state :cards (nth idx) :k)
-        fx (-> card-defs k :fx)]
-    (cond-> state
-            (:gain-random-cards fx) (gain-random-cards fx))))
+  (let [k (get-in state [:cards idx :k])
+        fx (get-in card-defs [k :fx])]
+    (reduce resolve-effect state fx)))
 
 
 (defn pick-card
