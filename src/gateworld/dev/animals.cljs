@@ -10,6 +10,7 @@
    [devcards.core :refer [defcard defcard-rg]]))
 (defn d [x] (js/console.log x) x)
 
+
 (defn string->bytes
   [s]
   (goog-crypt/stringToUtf8ByteArray s))
@@ -71,24 +72,24 @@
 
 (def card-defs
   {:peck
-   {:name "Peck"}
+   {:name "peck"}
 
    :fly
-   {:name "Fly"}
+   {:name "fly"}
 
    :speak
-   {:name "Speak"}
+   {:name "speak"}
 
    :crow
-   {:name "Crow"
+   {:name "crow"
     :fx (list [:discard-all]
               [:gain-random-cards {:cards [:peck :fly :speak]
                                    :n 2}])}
    :goat
-   {:name "Goat"}
+   {:name "goat"}
 
    :rat
-   {:name "Rat"}})
+   {:name "rat"}})
 
 
 ;;
@@ -148,7 +149,13 @@
 
 (defonce state-atom
   (reagent.core/atom
-   {:cards [{:k :crow} {:k :goat} {:k :rat}]
+   {:cards [{:k :crow
+             :dial {:pos 0
+                    :slots ["babycrow"
+                            "juvcrow"
+                            "adultcrow"]}}
+            {:k :goat}
+            {:k :rat}]
     :story {:seed (hash256 "abc")
             :card-picks '()}}))
 
@@ -161,11 +168,14 @@
          (map-indexed
           (fn [idx card]
             (let [{:keys [name]} (get card-defs (:k card))]
-              [:div {:style {:background "green"
+              [:div {:style {:background ""
+                             :border "2px solid black"
+                             :cursor "pointer"
                              :margin 10
-                             :padding 10}
+                             :padding 10
+                             :padding-bottom 50}
                      :on-click #(swap! state-atom pick-card idx)}
-               name]))
+               [:img {:src (str name "_test.png")}]]))
           (:cards @state-atom)))])
 
 
