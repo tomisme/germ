@@ -149,11 +149,7 @@
 
 (defonce state-atom
   (reagent.core/atom
-   {:cards [{:k :crow
-             :dial {:pos 0
-                    :slots ["babycrow"
-                            "juvcrow"
-                            "adultcrow"]}}
+   {:cards [{:k :crow}
             {:k :goat}
             {:k :rat}]
     :story {:seed (hash256 "abc")
@@ -168,14 +164,15 @@
          (map-indexed
           (fn [idx card]
             (let [{:keys [name]} (get card-defs (:k card))]
-              [:div {:style {:background ""
+              [:div {:style {
                              :border "2px solid black"
                              :cursor "pointer"
                              :margin 10
                              :padding 10
                              :padding-bottom 50}
                      :on-click #(swap! state-atom pick-card idx)}
-               [:img {:src (str name "_test.png")}]]))
+               [:img {:src (str "icons/" name ".svg")
+                      :width 50}]]))
           (:cards @state-atom)))])
 
 
