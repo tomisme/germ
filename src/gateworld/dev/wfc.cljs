@@ -86,8 +86,8 @@
           (for [row grid]
             (into [:div {:style {:display "flex"}}]
                   (for [cell row]
-                    [:div {:style {:width 32
-                                   :height 32
+                    [:div {:style {:width 8
+                                   :height 8
                                    :background-color (or (:color cell)
                                                          "yellow")}}
                      (if-not (:color cell)
@@ -144,7 +144,7 @@
 
 ;; TODO reflections/rotations
 ;; TODO weighted by frequency
-(defn patterns-from-sample
+(defn subpatterns-from
   [sample pattern-size]
   (let [[pattern-width pattern-height] pattern-size
         sample-width (count (first sample))
@@ -295,19 +295,19 @@
 
 (defn observe
   [wave]
-  (let [e-details (analyze-entropies (wave-entropies wave))]
+  (let [analysis (analyze-entropies (wave-entropies wave))]
     (cond
-      (:contradiction e-details)
+      (:contradiction analysis)
       (let [_ (js/console.log "contradiction!")]
         [wave nil])
 
-      (empty? (:low-cells e-details))
-      (let [ _ (js/console.log "done!" e-details)]
+      (empty? (:low-cells analysis))
+      (let [ _ (js/console.log "done!" analysis)]
         [wave nil])
 
       :else
       ;; TODO pseudo-random-nth
-      (let [{:keys [x y]} (rand-nth (:low-cells e-details))
+      (let [{:keys [x y]} (rand-nth (:low-cells analysis))
             wave' (update-2d wave [x y] observe-cell)]
         [wave' [x y]]))))
 
@@ -410,58 +410,82 @@
 
 ;; dev
 
+(defcard
+  "# wfc
+
+  Slow, 2D implementation of [Wave Function Collapse](https://github.com/mxgmn/WaveFunctionCollapse)
+  algorithm.
+
+  - *pattern*: 2D array of *tiles*
+  - *constraints*: how subpatterns can overlap other subpatterns
+  - *wave*: 2D array of possibile subpatterns (*cells*)
+
+  Input Pattern → Constraints → Wave → Output Pattern
+
+  ## TODO:
+  - Use coefficients in wave, instead of booleans (to achieve C2 from original WFC algo)
+  - Support subpattern reflections/rotations
+  - Support subpatterns wrapping input
+  - Support pseudo-random observations (for blockchain games etc.)
+
+  ## Next steps:
+  - Refactor entry point to use a settings map
+
+  ## Questions:
+  - Why is our wave made up of possible *subpatterns* rather than possible *tiles*?")
+
 
 (def test-pattern-size [2 2])
 
-(def sample
+(def sample-pattern
   [[:white :white :white :white :white :white]
    [:white :black :black :black :black :white]
    [:white :orange :green :white :white :white]
    [:white :black :black :black :white :white]
    [:white :white :white :black :white :white]])
-(defcard sample sample)
+(defcard sample-pattern sample-pattern)
 
-(defcard-rg sample-render
-  (render-pattern sample))
+(defcard-rg input-render
+  (render-pattern sample-pattern))
 
-(defcard-rg full-render
-  (let [patterns (patterns-from-sample sample test-pattern-size)]
+(defcard-rg output-render
+  (let [patterns (subpatterns-from sample-pattern test-pattern-size)]
     (render-wave
      (run {:patterns patterns
            :pattern-size test-pattern-size
-           :width 8
-           :height 8})
+           :width 32
+           :height 32})
      patterns)))
 
-(def patterns (patterns-from-sample sample test-pattern-size))
-(defcard patterns patterns)
-(defcard-rg patterns-render
-  (render-patterns patterns))
+(def subpatterns (subpatterns-from sample-pattern test-pattern-size))
+(defcard subpatterns subpatterns)
+(defcard-rg subpatterns-render
+  (render-patterns subpatterns))
 
 (def offsets (build-offsets test-pattern-size))
 (defcard offsets offsets)
 
 (def overlap-index
-  (build-constraints patterns offsets test-pattern-size))
+  (build-constraints subpatterns offsets test-pattern-size))
 (defcard overlap-index overlap-index)
 (defcard-rg overlap-index-render
-  (render-overlap-index patterns overlap-index))
+  (render-overlap-index subpatterns overlap-index))
 
-(def wave (initialize-wave [5 5] (count patterns)))
+(def wave (initialize-wave [5 5] (count subpatterns)))
 (defcard wave wave)
-(defcard-rg wave-render
-  (render-wave wave patterns))
+#_(defcard-rg wave-render
+    (render-wave wave subpatterns))
 
-(defonce test-wave (reagent.core/atom wave))
-(defn test-render [] (render-wave @test-wave patterns))
-(defcard-rg stepped-test
-  [:div
-   [test-render]
-   [:div
-    [:button {:on-click #()}
-     "observe"]
-    [:button {:on-click #()}
-     "propagate"]]]
-  test-wave
-  {:history true
-   :inspect-data true})
+#_(defonce test-wave (reagent.core/atom wave))
+#_(defn test-render [] (render-wave @test-wave subpatterns))
+#_(defcard-rg stepped-test
+    [:div
+     [test-render]
+     [:div
+      [:button {:on-click #()}
+       "observe"]
+      [:button {:on-click #()}
+       "propagate"]]]
+    test-wave
+    {:history true
+     :inspect-data true})
