@@ -1,4 +1,4 @@
-(ns gateworld.dev.animals
+(ns dev.animals
   (:require
    [reagent.core :as rg]
    [goog.string :as goog-string]

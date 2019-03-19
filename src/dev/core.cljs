@@ -1,9 +1,9 @@
-(ns gateworld.dev.core
+(ns dev.core
   (:require
    [devcards.core]
-   [gateworld.dev.images]
-   [gateworld.dev.wfc]
-   [gateworld.dev.animals]
+   [dev.animals]
+   [dev.images]
+   [dev.wfc]
    [re-frame.core :as rf]
    [gateworld.client.core]
    [gateworld.client.views])

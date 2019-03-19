@@ -1,4 +1,4 @@
-(ns gateworld.dev.images
+(ns dev.images
   (:require-macros
     [devcards.core :refer [defcard defcard-rg]]))
 

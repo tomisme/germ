@@ -1,4 +1,4 @@
-(ns gateworld.dev.wfc
+(ns dev.wfc
   (:require
    [reagent.core])
   (:require-macros
