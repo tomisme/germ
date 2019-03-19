@@ -1,7 +1,7 @@
 (ns gateworld.dev.core
   (:require
    [devcards.core]
-   [gateworld.dev.lang]
+   [gateworld.dev.images]
    [gateworld.dev.wfc]
    [gateworld.dev.animals]
    [re-frame.core :as rf]
