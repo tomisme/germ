@@ -2,6 +2,8 @@
   (:require
    [devcards.core]
    [dev.animals]
+   [dev.dream.scratch]
+   [dev.frog.pond]
    [dev.images]
    [dev.wfc]
    [re-frame.core :as rf]
