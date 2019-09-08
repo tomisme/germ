@@ -5,6 +5,7 @@
    [dev.dream.scratch]
    [dev.frog.pond]
    [dev.images]
+   [dev.masonry]
    [dev.wfc]
    [re-frame.core :as rf]
    [gateworld.client.core]
