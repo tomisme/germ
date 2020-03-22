@@ -4,5 +4,8 @@
         devcards {:mvn/version "0.2.6"}
         re-frame {:mvn/version "0.10.6"}
         reagent {:mvn/version "0.8.1"}
-        reanimated {:mvn/version "0.6.1"}}
+        reanimated {:mvn/version "0.6.1"}
+        funcool/promesa {:mvn/version "5.1.0"}
+        funcool/httpurr {:mvn/version "2.0.0"}
+        funcool/cuerdas {:mvn/version "2.2.0"}}
  :paths ["src" "target" "resources"]}

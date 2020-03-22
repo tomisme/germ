@@ -1,18 +1,21 @@
 (ns dev.core
   (:require
-   [devcards.core]
+   [devcards.core :refer-macros [defcard-rg]]
+   [re-frame.core :as rf]
+
    [dev.animals]
+   [dev.rolypoly.bedmap]
    [dev.dream.scratch]
+   [dev.gates]
    [dev.frog.pond]
    [dev.images]
    [dev.masonry]
    [dev.wfc]
-   [re-frame.core :as rf]
-   [gateworld.client.core]
-   [gateworld.client.views])
-  (:require-macros
-   [devcards.core :refer [defcard defcard-rg]]))
 
+   [gateworld.client.core]
+   [gateworld.client.views]))
+  ; (:require-macros
+  ;  [devcards.core :refer [defcard defcard-rg]]))
 
 (defn ui-test-component
   []
@@ -30,7 +33,7 @@
      [:button {:on-click #(rf/dispatch [:start-conflict-practise])}
       "Start Conflict"]]]])
 
-
+(def ui)
 (defcard-rg ui
   [ui-test-component])
 
