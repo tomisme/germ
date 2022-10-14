@@ -8,12 +8,11 @@
    [gateworld.client.views.conflict :refer [conflict-view]]
    [gateworld.client.views.map :refer [map-view]]))
 
-
 (defn ui-component
   []
   [:div
    (condp = @(rf/subscribe [:active-view])
-          :conflict [conflict-view]
-          :intro [intro-view]
-          :map [map-view]
-          [:span "Loading client..."])])
+     :conflict [conflict-view]
+     :intro [intro-view]
+     :map [map-view]
+     [:span "Loading client..."])]) 

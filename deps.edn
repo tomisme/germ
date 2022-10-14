@@ -1,10 +1,10 @@
-{:deps {medley {:mvn/version "1.0.0"}
+{:deps {medley/medley {:mvn/version "1.0.0"}
         com.bhauman/figwheel-main {:mvn/version "0.1.9"}
         com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
-        devcards {:mvn/version "0.2.6"}
-        re-frame {:mvn/version "0.10.6"}
-        reagent {:mvn/version "0.8.1"}
-        reanimated {:mvn/version "0.6.1"}
+        devcards/devcards {:mvn/version "0.2.6"}
+        re-frame/re-frame {:mvn/version "0.10.6"}
+        reagent/reagent {:mvn/version "0.8.1"}
+        reanimated/reanimated {:mvn/version "0.6.1"}
         funcool/promesa {:mvn/version "5.1.0"}
         funcool/httpurr {:mvn/version "2.0.0"}
         funcool/cuerdas {:mvn/version "2.2.0"}}

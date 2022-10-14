@@ -1,9 +1,8 @@
 (ns gateworld.rules.core
   (:require
-   [gateworld.utils :refer [vec-without]])
+   [gateworld.utils :refer [vec-without-idx]])
   (:require-macros
    [devcards.core :refer [defcard]]))
-
 
 (def conflict-move-types
   #{:activate-ability
@@ -60,7 +59,7 @@
   [state {:keys [char-idx perm-idx]}]
   (update-in state
              [:chars char-idx :permanents]
-             vec-without
+             vec-without-idx
              perm-idx))
 
 
@@ -68,8 +67,8 @@
   [state]
   (let [effect (-> state :fx peek)
         popped-state (update-in state [:fx] pop)]
-    (condp = (:type effect)
-           :sac-perm (sacrifice-permanent popped-state effect))))
+    (case (:type effect)
+      :sac-perm (sacrifice-permanent popped-state effect))))
 
 
 ;; dev

@@ -6,16 +6,14 @@
    [dev.animals]
    [dev.rolypoly.bedmap]
    [dev.dream.scratch]
-   [dev.gates]
    [dev.frog.pond]
+   [dev.gran]
    [dev.images]
    [dev.masonry]
    [dev.wfc]
 
    [gateworld.client.core]
    [gateworld.client.views]))
-  ; (:require-macros
-  ;  [devcards.core :refer [defcard defcard-rg]]))
 
 (defn ui-test-component
   []
